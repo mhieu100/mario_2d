@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mario Game World — World 1-1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#111318; --shell:#252A35; --shell-hi:#394150; --shell-lo:#171B23;
+  --screen:#12161D; --sky:#72D5E8; --night:#17243F; --grass:#66B83E;
+  --earth:#B85C32; --cloud:#FFF8E8; --red:#F24A2E; --red-dark:#B52E1B;
+  --gold:#F7C948; --gold-dark:#C79418; --ink:#111318; --paper:#FFF8E8;
+  --white:#FFF8E8; --muted:#8C93A3;
+  --pixel:'Press Start 2P', ui-monospace, monospace;
+  --sans:'Inter', system-ui, sans-serif;
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:48px; --s6:64px; --s7:96px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--canvas);
+  color:var(--white);
+  font-family:var(--sans);
+  font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg,canvas{display:block}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+.wrap{max-width:1440px;margin:0 auto;padding:0 var(--s3)}
+.pix{font-family:var(--pixel);font-weight:400;letter-spacing:0;line-height:1}
+.label{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.2}
+.meta{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.08em;line-height:1.3}
+
+/* ============ TOP RAIL ============ */
+.rail{
+  position:sticky;top:0;z-index:60;height:56px;
+  background:var(--shell);
+  border-bottom:2px solid var(--shell-lo);
+  box-shadow:inset 0 2px 0 var(--shell-hi);
+}
+.rail-inner{
+  max-width:1440px;margin:0 auto;height:100%;padding:0 var(--s3);
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--s3);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mark{width:16px;height:16px;background:var(--red);box-shadow:inset -2px -2px 0 var(--red-dark)}
+.brand .name{font-family:var(--pixel);font-size:11px;color:var(--white)}
+.brand .full{color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.rail-status{
+  display:flex;align-items:center;gap:var(--s2);justify-self:center;
+}
+.pip{width:8px;height:8px;background:var(--gold);box-shadow:inset -2px -2px 0 var(--gold-dark)}
+.rail-status .txt{font-family:var(--pixel);font-size:9px;color:var(--gold)}
+.rail-nav{display:flex;gap:var(--s1);justify-self:end}
+.pill{
+  border:2px solid var(--shell-hi);background:var(--shell-lo);
+  padding:7px 12px;font-family:var(--pixel);font-size:9px;color:var(--white);
+  transition:background .12s ease,color .12s ease;white-space:nowrap;
+}
+.pill:hover{background:var(--gold);color:var(--ink)}
+.pill.hot{background:var(--red);border-color:var(--red-dark);color:var(--white)}
+.pill.hot:hover{background:var(--gold);color:var(--ink)}
+@media (max-width:900px){ .rail-status{display:none} .rail-inner{grid-template-columns:1fr auto} }
+@media (max-width:520px){ .brand .full{display:none} .pill{padding:7px 8px;font-size:8px} }
+
+/* ============ CONSOLE SHELL ============ */
+.stage{padding:var(--s4) 0 var(--s7)}
+.console{
+  max-width:1440px;margin:0 auto;padding:var(--s3);
+  background:var(--shell);
+  border:2px solid var(--shell-lo);
+  box-shadow:inset 2px 2px 0 var(--shell-hi), inset -2px -2px 0 var(--shell-lo), 10px 10px 0 #0B0D11;
+  display:grid;grid-template-columns:repeat(12,1fr);gap:var(--s3);
+  position:relative;
+}
+.console::before,.console::after{
+  content:"";position:absolute;width:10px;height:10px;background:var(--shell-lo);
+  box-shadow:inset 2px 2px 0 #0E1116;
+}
+.console::before{top:12px;left:12px}
+.console::after{bottom:12px;right:12px}
+
+/* --- screen --- */
+.screen-wrap{grid-column:span 10;position:relative}
+.bezel{
+  background:var(--screen);
+  border:2px solid var(--shell-lo);
+  box-shadow:inset 2px 2px 0 #0B0E13, inset -2px -2px 0 var(--shell-hi);
+  padding:10px;position:relative;
+}
+.canvas-holder{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+#game{
+  width:100%;height:100%;display:block;
+  image-rendering:pixelated;image-rendering:crisp-edges;
+  touch-action:none;
+}
+.screen-sheen{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom, rgba(255,255,255,.035) 0 2px, transparent 2px 4px);
+  mix-blend-mode:screen;
+}
+
+/* --- HUD --- */
+.hud{
+  position:absolute;top:0;left:0;right:0;height:56px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  padding:10px 14px;pointer-events:none;
+}
+.hud .cell{display:flex;flex-direction:column;gap:4px}
+.hud .k{font-family:var(--pixel);font-size:10px;color:var(--gold)}
+.hud .k.red{color:var(--red)}
+.hud .v{font-family:var(--pixel);font-size:14px;color:var(--white);text-shadow:2px 2px 0 rgba(0,0,0,.55)}
+.hud .cell:nth-child(2),.hud .cell:nth-child(3){align-items:center}
+.hud .cell:nth-child(4){align-items:flex-end}
+
+/* --- title plate --- */
+.plate{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:var(--s2);
+  text-align:center;padding:var(--s3);
+  background:rgba(17,19,24,.72);
+}
+.plate[hidden]{display:none}
+.plate .title{
+  font-family:var(--pixel);font-size:clamp(22px,4.4vw,52px);line-height:1.12;
+  color:var(--white);text-shadow:4px 4px 0 var(--red-dark);
+}
+.plate .title span{color:var(--gold);display:block;text-shadow:4px 4px 0 var(--gold-dark)}
+.plate .how{font-family:var(--pixel);font-size:10px;color:var(--sky);line-height:1.9}
+.plate .best{font-family:var(--pixel);font-size:10px;color:var(--muted)}
+.plate-actions{display:flex;gap:var(--s2);flex-wrap:wrap;justify-content:center;margin-top:var(--s1)}
+
+.btn{
+  font-family:var(--pixel);font-size:11px;line-height:1;
+  padding:16px 22px;min-height:48px;
+  background:var(--red);color:var(--white);
+  border:2px solid var(--red-dark);
+  box-shadow:inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.28);
+  transition:transform .08s ease, background .12s ease;
+}
+.btn:hover{background:var(--gold);color:var(--ink);border-color:var(--gold-dark)}
+.btn:active{transform:translateY(2px);box-shadow:inset 2px 2px 0 rgba(0,0,0,.25)}
+.btn.ghost{background:var(--shell-lo);border-color:var(--shell-hi);color:var(--white)}
+.btn.ghost:hover{background:var(--gold);color:var(--ink)}
+
+/* --- cartridge rail --- */
+.cart-rail{
+  grid-column:span 2;
+  background:var(--shell-lo);
+  border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 #0D1015;
+  padding:var(--s2) 10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  gap:var(--s3);min-height:100%;
+}
+.cart-rail .vert{
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  font-family:var(--pixel);font-size:12px;color:var(--white);letter-spacing:.06em;
+}
+.cart-rail .stripe{width:100%;height:6px;background:var(--red);box-shadow:0 12px 0 var(--gold), 0 24px 0 var(--sky)}
+.cart-rail .sub{font-family:var(--pixel);font-size:8px;color:var(--muted);text-align:center;line-height:1.9}
+
+/* --- control deck --- */
+.deck{
+  grid-column:1/-1;
+  background:var(--shell-lo);
+  border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 #0D1015;
+  padding:var(--s3);
+  display:grid;grid-template-columns:7fr 5fr;gap:var(--s4);align-items:center;
+}
+.deck-left{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
+.dpad{width:172px;height:172px;flex:0 0 auto}
+.deck-keys{display:flex;flex-wrap:wrap;gap:var(--s1);align-items:center}
+.keycap{
+  min-width:52px;min-height:48px;padding:10px 12px;
+  background:var(--shell);border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 var(--shell-hi), inset -2px -2px 0 var(--shell-lo), 3px 3px 0 #0B0D11;
+  font-family:var(--pixel);font-size:10px;color:var(--white);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  transition:transform .06s ease, background .1s ease;
+  user-select:none;-webkit-user-select:none;touch-action:none;
+}
+.keycap .kc-sub{font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.keycap:hover{background:var(--shell-hi)}
+.keycap.is-down{transform:translateY(3px);box-shadow:inset 2px 2px 0 var(--shell-lo);background:var(--gold);color:var(--ink)}
+.keycap.is-down .kc-sub{color:var(--ink)}
+.keycap.wide{min-width:104px}
+
+.deck-right{display:flex;flex-direction:column;gap:var(--s2);align-items:flex-start}
+.status-chip{
+  display:flex;align-items:center;gap:10px;
+  background:var(--screen);border:2px solid var(--shell-hi);
+  padding:12px 14px;width:100%;
+}
+.status-chip .led{width:10px;height:10px;background:var(--red);box-shadow:0 0 0 2px var(--red-dark)}
+.status-chip .led.on{background:var(--gold);box-shadow:0 0 0 2px var(--gold-dark)}
+.status-chip .txt{font-family:var(--pixel);font-size:9px;color:var(--white);line-height:1.7}
+.deck-actions{display:flex;gap:var(--s2);flex-wrap:wrap}
+.icon-btn{
+  width:52px;height:48px;display:grid;place-items:center;
+  background:var(--shell);border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 var(--shell-hi), 3px 3px 0 #0B0D11;
+}
+.icon-btn:hover{background:var(--gold)}
+.icon-btn:hover svg{stroke:var(--ink)}
+.icon-btn svg{stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter}
+
+/* --- touch pad (mobile) --- */
+.touchpad{display:none;grid-column:1/-1;gap:var(--s2);padding-top:var(--s1)}
+.touchpad .tp-move{display:flex;gap:var(--s2)}
+.tp-btn{
+  flex:1;min-height:64px;
+  background:var(--shell);border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 var(--shell-hi), 4px 4px 0 #0B0D11;
+  font-family:var(--pixel);font-size:12px;color:var(--white);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.tp-btn .kc-sub{font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.tp-btn.is-down{background:var(--gold);color:var(--ink);transform:translateY(3px)}
+.tp-btn.is-down .kc-sub{color:var(--ink)}
+.tp-btn.act{background:var(--red);border-color:var(--red-dark)}
+.tp-btn.act .kc-sub{color:rgba(255,248,232,.8)}
+
+/* ============ TITLE STRIP ============ */
+.strip{
+  background:var(--sky);color:var(--ink);
+  border-top:4px solid var(--shell-lo);border-bottom:4px solid var(--shell-lo);
+  padding:var(--s7) 0 var(--s6);position:relative;overflow:hidden;
+}
+.strip .hills{position:absolute;left:0;right:0;bottom:0;width:100%;height:auto;opacity:.95}
+.strip-inner{position:relative;z-index:2;text-align:center}
+.strip .world-tag{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--gold);border:3px solid var(--ink);
+  padding:10px 16px;font-family:var(--pixel);font-size:11px;color:var(--ink);
+}
+.strip h2{
+  font-family:var(--pixel);font-size:clamp(26px,5vw,64px);line-height:1.12;
+  margin:var(--s4) 0 var(--s3);color:var(--ink);text-shadow:4px 4px 0 rgba(255,248,232,.7);
+}
+.strip p{max-width:520px;margin:0 auto;font-size:17px;font-weight:600;color:#2A2E36}
+
+/* ============ MANUAL (paper) ============ */
+.manual{background:var(--paper);color:var(--ink);padding:var(--s7) 0}
+.manual-grid{display:grid;grid-template-columns:4fr 8fr;gap:var(--s5)}
+.eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:var(--s2)}
+.eyebrow .bar{width:24px;height:4px;background:var(--red)}
+.eyebrow span{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+.manual h2{font-family:var(--pixel);font-size:clamp(20px,2.4vw,28px);line-height:1.25;margin-bottom:var(--s3)}
+.manual p{color:#3A3F48;max-width:34ch}
+
+.ctrl-table{width:100%;border-collapse:collapse;border:2px solid var(--ink)}
+.ctrl-table caption{
+  text-align:left;font-family:var(--sans);font-size:10px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:#6B7280;padding-bottom:10px;
+}
+.ctrl-table th{
+  text-align:left;background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:12px 14px;
+}
+.ctrl-table td{padding:14px;border-top:2px solid var(--ink);font-size:15px;vertical-align:middle}
+.ctrl-table tr td:first-child{
+  font-family:var(--pixel);font-size:11px;width:34%;
+  background:#F2E9D2;white-space:nowrap;
+}
+.ctrl-table tr:nth-child(even) td:last-child{background:#FBF4E4}
+
+.diagram{margin-top:var(--s5);display:flex;gap:var(--s5);align-items:center;flex-wrap:wrap}
+.diagram svg{flex:0 0 auto}
+.diagram .dtext{flex:1;min-width:220px}
+.diagram .dtext h3{font-family:var(--pixel);font-size:13px;margin-bottom:var(--s2)}
+.diagram .dtext p{font-size:14px;max-width:36ch}
+
+.diorama{
+  margin-top:var(--s5);background:var(--ink);color:var(--paper);
+  border:2px solid var(--ink);padding:var(--s4);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:var(--s2);
+}
+.diorama .tile{
+  background:#20252E;border:2px solid #394150;padding:var(--s2);
+  display:flex;flex-direction:column;gap:10px;
+}
+.diorama .cap{
+  background:var(--shell);border:2px solid var(--shell-hi);
+  box-shadow:inset 2px 2px 0 var(--shell-hi), 3px 3px 0 #0B0D11;
+  height:56px;display:grid;place-items:center;
+  font-family:var(--pixel);font-size:11px;color:var(--white);
+}
+.diorama .cap.gold{background:var(--gold);color:var(--ink);border-color:var(--gold-dark)}
+.diorama .cap.red{background:var(--red);border-color:var(--red-dark)}
+.diorama .capname{font-family:var(--pixel);font-size:9px;color:var(--paper)}
+.diorama .capsub{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* ============ REVEAL (signature) ============ */
+.reveal-band{background:var(--night);padding:var(--s7) 0 0}
+.reveal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+.reveal-head h2{font-family:var(--pixel);font-size:clamp(20px,2.6vw,28px);line-height:1.25;max-width:16ch}
+.reveal-stages{display:flex;gap:var(--s1);flex-wrap:wrap}
+.stage-tag{
+  border:2px solid var(--muted);padding:8px 12px;
+  font-family:var(--pixel);font-size:9px;color:var(--muted);
+  transition:all .18s ease;
+}
+.stage-tag.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.reveal-frame{
+  position:relative;border:2px solid var(--shell-hi);border-bottom:0;
+  background:#0D1522;overflow:hidden;aspect-ratio:1200/420;
+}
+.reveal-frame svg{width:100%;height:100%}
+.reveal-caption{
+  border:2px solid var(--shell-hi);border-top:0;background:var(--shell-lo);
+  padding:var(--s3);display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
+}
+.reveal-caption .rc-t{font-family:var(--pixel);font-size:11px;color:var(--gold)}
+.reveal-caption .rc-p{font-family:var(--sans);font-size:14px;color:var(--white);max-width:52ch}
+.reveal-labels{display:flex;gap:var(--s2);flex-wrap:wrap}
+.reveal-labels span{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.reveal-labels span.on{color:var(--gold)}
+
+/* ============ WORLD ============ */
+.world{background:var(--night);padding:var(--s7) 0}
+.world-grid{display:grid;grid-template-columns:7fr 5fr;gap:var(--s4)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+.tile-card{background:var(--shell-lo);border:2px solid var(--shell-hi)}
+.tile-art{aspect-ratio:1/1;background:#0D1522;border-bottom:2px solid var(--shell-hi);overflow:hidden}
+.tile-art svg{width:100%;height:100%}
+.tile-body{padding:var(--s3);display:flex;flex-direction:column;gap:10px}
+.tile-body h3{font-family:var(--pixel);font-size:12px;line-height:1.4}
+.tile-body p{font-size:14px;color:#B9C0CC}
+.badge{
+  align-self:flex-start;background:var(--gold);color:var(--ink);
+  font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:5px 8px;
+}
+.stats{background:var(--shell);border:2px solid var(--shell-hi);padding:var(--s4)}
+.stats h3{font-family:var(--pixel);font-size:13px;margin-bottom:var(--s3);color:var(--white)}
+.stat-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);
+  padding:var(--s2) 0;border-top:2px solid var(--shell-hi);
+}
+.stat-row .k{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat-row .v{font-family:var(--pixel);font-size:13px;color:var(--gold)}
+.stats .note{margin-top:var(--s3);font-size:13px;color:#B9C0CC}
+
+/* ============ SCOREBOARD ============ */
+.score-band{
+  background:var(--sky);padding:var(--s7) 0;position:relative;overflow:hidden;
+  border-top:4px solid var(--shell-lo);
+}
+.score-band .hills{position:absolute;bottom:0;left:0;width:100%;opacity:.9}
+.score-panel{
+  position:relative;z-index:2;background:var(--canvas);color:var(--white);
+  border:3px solid var(--ink);padding:var(--s5);
+  display:flex;justify-content:space-between;align-items:center;gap:var(--s4);flex-wrap:wrap;
+}
+.score-panel h2{font-family:var(--pixel);font-size:clamp(18px,2.4vw,28px);line-height:1.35;max-width:18ch}
+.score-panel .sub{color:var(--muted);margin-top:var(--s2);font-size:14px}
+
+/* ============ FOOTER ============ */
+footer{background:var(--canvas);padding:var(--s5) 0 var(--s6);border-top:2px solid var(--shell-lo)}
+.foot-inner{display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;align-items:center}
+.foot-inner .f1{font-family:var(--pixel);font-size:10px;color:var(--white);line-height:1.9}
+.foot-inner .f2{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em}
+
+/* ============ REVEAL ANIM ============ */
+.rv{opacity:0;transform:translateY(12px);transition:opacity .42s ease, transform .42s ease}
+.rv.in{opacity:1;transform:none}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1199px){
+  .screen-wrap{grid-column:span 9}
+  .cart-rail{grid-column:span 3}
+  .deck{grid-template-columns:1fr;gap:var(--s3)}
+  .deck-right{flex-direction:row;align-items:center;flex-wrap:wrap;gap:var(--s3)}
+  .status-chip{width:auto;flex:1;min-width:240px}
+  .manual-grid{grid-template-columns:1fr;gap:var(--s4)}
+  .world-grid{grid-template-columns:1fr}
+}
+@media (max-width:767px){
+  .wrap{padding:0 var(--s2)}
+  .stage{padding:var(--s3) 0 var(--s6)}
+  .console{padding:12px;gap:12px;box-shadow:inset 2px 2px 0 var(--shell-hi), 6px 6px 0 #0B0D11}
+  .screen-wrap{grid-column:1/-1}
+  .cart-rail{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;padding:12px}
+  .cart-rail .vert{writing-mode:horizontal-tb;transform:none;font-size:10px}
+  .cart-rail .stripe{width:80px;height:6px;box-shadow:none}
+  .cart-rail .sub{text-align:right}
+  .deck{padding:var(--s2)}
+  .deck-left{gap:var(--s2)}
+  .dpad{width:132px;height:132px}
+  .touchpad{display:grid}
+  .hud{grid-template-columns:repeat(4,1fr);padding:8px 10px}
+  .hud .k{font-size:8px}
+  .hud .v{font-size:11px}
+  .plate .how{font-size:8px}
+  .tiles{grid-template-columns:1fr}
+  .diorama{grid-template-columns:1fr 1fr;padding:var(--s2)}
+  .score-panel{padding:var(--s3)}
+  .strip{padding:var(--s6) 0 var(--s5)}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  *{animation-duration:.001ms !important;transition-duration:.12s !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP RAIL ============ -->
+<header class="rail">
+  <div class="rail-inner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <div class="name">MARIO GAME WORLD</div>
+        <div class="full">Classic platform game</div>
+      </div>
+    </div>
+    <div class="rail-status">
+      <div class="pip" aria-hidden="true"></div>
+      <div class="txt">WORLD 1-1 / 1 PLAYER GAME</div>
+    </div>
+    <nav class="rail-nav" aria-label="Sections">
+      <a class="pill" href="#play">PLAY</a>
+      <a class="pill" href="#controls">CONTROLS</a>
+      <a class="pill hot" href="#play" id="railStart">START GAME</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ============ CONSOLE ============ -->
+<section class="stage" id="play">
+  <div class="console">
+
+    <!-- screen -->
+    <div class="screen-wrap">
+      <div class="bezel">
+        <div class="canvas-holder">
+          <canvas id="game" width="640" height="360" role="img"
+            aria-label="Mario-style platform game. Use arrow keys or A and D to move, Space or W to jump, Shift to run, R to restart, P to pause."></canvas>
+          <div class="screen-sheen" aria-hidden="true"></div>
+
+          <!-- HUD -->
+          <div class="hud" id="hud" aria-hidden="false">
+            <div class="cell"><div class="k red">MARIO</div><div class="v" id="hudScore">000000</div></div>
+            <div class="cell"><div class="k">COINS</div><div class="v" id="hudCoins">×00</div></div>
+            <div class="cell"><div class="k">WORLD</div><div class="v">1-1</div></div>
+            <div class="cell"><div class="k">TIME</div><div class="v" id="hudTime">300</div></div>
+          </div>
+
+          <!-- title plate -->
+          <div class="plate" id="plate">
+            <div class="title">MARIO<span>GAME WORLD</span></div>
+            <div class="how">HOW TO PLAY<br>ARROWS / A D — MOVE &nbsp;·&nbsp; SPACE — JUMP &nbsp;·&nbsp; SHIFT — RUN</div>
+            <div class="best" id="bestScore">BEST 002400</div>
+            <div class="plate-actions">
+              <button class="btn" id="startBtn">START GAME</button>
+              <button class="btn ghost" id="soundBtn">SOUND ON</button>
+            </div>
+          </div>
+
+          <!-- pause / end plate -->
+          <div class="plate" id="plate2" hidden>
+            <div class="title" id="plate2Title">PAUSED<span id="plate2Sub">PRESS P TO CONTINUE</span></div>
+            <div class="plate-actions">
+              <button class="btn" id="resumeBtn">CONTINUE</button>
+              <button class="btn ghost" id="restartBtn2">RESET WORLD</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- cartridge label rail -->
+    <aside class="cart-rail" aria-label="Cartridge label">
+      <div class="vert">SUPER MARIO WORLD</div>
+      <div class="stripe" aria-hidden="true"></div>
+      <div class="sub">1 PLAYER<br>GAME<br>—<br>WORLD 1-1</div>
+    </aside>
+
+    <!-- control deck -->
+    <div class="deck">
+      <div class="deck-left">
+        <!-- D-pad diagram: decorative only -->
+        <svg class="dpad" viewBox="0 0 172 172" role="img" aria-label="D-pad diagram. Use left and right arrows to move, A or Space to jump, B or Shift to run.">
+          <rect x="4" y="4" width="164" height="164" fill="#171B23" stroke="#394150" stroke-width="2"/>
+          <path d="M58 34 h56 v24 h24 v56 h-24 v24 h-56 v-24 h-24 v-56 h24 z" fill="#252A35" stroke="#394150" stroke-width="2"/>
+          <!-- arrowheads -->
+          <path d="M86 44 l12 14 h-24 z" fill="#FFF8E8"/>
+          <path d="M86 128 l12 -14 h-24 z" fill="#FFF8E8"/>
+          <path d="M44 86 l14 -12 v24 z" fill="#FFF8E8"/>
+          <path d="M128 86 l-14 -12 v24 z" fill="#FFF8E8"/>
+          <rect x="80" y="80" width="12" height="12" fill="#F24A2E"/>
+          <!-- action buttons -->
+          <rect x="128" y="24" width="30" height="30" fill="#F24A2E" stroke="#B52E1B" stroke-width="2"/>
+          <rect x="14" y="118" width="30" height="30" fill="#F7C948" stroke="#C79418" stroke-width="2"/>
+          <text x="143" y="44" font-family="'Press Start 2P',monospace" font-size="11" fill="#FFF8E8" text-anchor="middle">A</text>
+          <text x="29" y="138" font-family="'Press Start 2P',monospace" font-size="11" fill="#111318" text-anchor="middle">B</text>
+          <text x="29" y="160" font-family="Inter,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="#8C93A3">RUN</text>
+          <text x="143" y="66" font-family="Inter,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="#8C93A3">JUMP</text>
+        </svg>
+
+        <div class="deck-keys" id="deckKeys">
+          <button class="keycap" data-key="left" aria-label="Move left, Left Arrow">◀<span class="kc-sub">LEFT</span></button>
+          <button class="keycap" data-key="right" aria-label="Move right, Right Arrow">▶<span class="kc-sub">RIGHT</span></button>
+          <button class="keycap wide" data-key="jump" aria-label="Jump, Space or A">A<span class="kc-sub">JUMP</span></button>
+          <button class="keycap wide" data-key="run" aria-label="Run, Shift or B">B<span class="kc-sub">RUN</span></button>
+          <button class="keycap wide" data-key="pause" aria-label="Pause, P">P<span class="kc-sub">PAUSE</span></button>
+        </div>
+      </div>
+
+      <div class="deck-right">
+        <div class="status-chip">
+          <div class="led" id="led" aria-hidden="true"></div>
+          <div class="txt" id="statusText">READY FOR PLAYER 1<br>WORLD 1-1 · GAME PAUSED</div>
+        </div>
+        <div class="deck-actions">
+          <button class="btn" id="restartBtn">RESTART LEVEL</button>
+          <button class="icon-btn" id="soundIcon" aria-pressed="true" aria-label="Toggle sound">
+            <svg viewBox="0 0 24 24" width="22" height="22" id="soundSvg" aria-hidden="true">
+              <path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 8c1.5 1.5 1.5 6.5 0 8" id="wave1"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="pauseIcon" aria-label="Pause or continue the game">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M8 5v14M16 5v14"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- touch controls -->
+    <div class="touchpad" id="touchpad">
+      <div class="tp-move">
+        <button class="tp-btn" data-key="left" aria-label="Move left">◀<span class="kc-sub">LEFT</span></button>
+        <button class="tp-btn" data-key="right" aria-label="Move right">▶<span class="kc-sub">RIGHT</span></button>
+      </div>
+      <div class="tp-move">
+        <button class="tp-btn act" data-key="run" aria-label="Run">B<span class="kc-sub">RUN</span></button>
+        <button class="tp-btn act" data-key="jump" aria-label="Jump">A<span class="kc-sub">JUMP</span></button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ TITLE STRIP ============ -->
+<section class="strip">
+  <svg class="hills" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+    <rect x="0" y="150" width="1440" height="70" fill="#66B83E"/>
+    <rect x="0" y="150" width="1440" height="10" fill="#3F8B2A"/>
+    <path d="M0 150 L120 60 L240 150 Z" fill="#3F8B2A"/>
+    <path d="M200 150 L340 40 L480 150 Z" fill="#4C9B33"/>
+    <path d="M600 150 L720 72 L840 150 Z" fill="#3F8B2A"/>
+    <path d="M900 150 L1060 34 L1220 150 Z" fill="#4C9B33"/>
+    <path d="M1180 150 L1300 78 L1420 150 Z" fill="#3F8B2A"/>
+    <rect x="330" y="118" width="20" height="32" fill="#B85C32"/>
+    <rect x="312" y="100" width="56" height="22" fill="#66B83E"/>
+    <rect x="1050" y="110" width="20" height="40" fill="#B85C32"/>
+    <rect x="1032" y="92" width="56" height="22" fill="#66B83E"/>
+  </svg>
+  <div class="wrap strip-inner">
+    <div class="world-tag"><span>WORLD 1-1</span></div>
+    <h2>A SMALL WORLD<br>WITH A LONG WAY TO GO.</h2>
+    <p>Jump in. The first hill is waiting. Run through the meadow, duck into the pipe, and carry the gold to the castle before the clock runs out.</p>
+  </div>
+</section>
+
+<!-- ============ CONTROL MANUAL ============ -->
+<section class="manual" id="controls">
+  <div class="wrap manual-grid">
+    <div class="rv">
+      <div class="eyebrow"><div class="bar"></div><span>Instruction manual</span></div>
+      <h2>CONTROL<br>THE WORLD.</h2>
+      <p>One thumb, one keyboard, one job: get Mario to the flagpole. Movement keys are held, not toggled — let go and he stops on the spot.</p>
+    </div>
+
+    <div class="rv">
+      <table class="ctrl-table">
+        <caption>Keyboard &amp; touch controls</caption>
+        <thead>
+          <tr><th scope="col">Button</th><th scope="col">Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>← / A</td><td>Move left</td></tr>
+          <tr><td>→ / D</td><td>Move right</td></tr>
+          <tr><td>SPACE / W</td><td>Jump</td></tr>
+          <tr><td>SHIFT</td><td>Run</td></tr>
+          <tr><td>P</td><td>Pause</td></tr>
+          <tr><td>R</td><td>Restart level</td></tr>
+        </tbody>
+      </table>
+
+      <div class="diagram">
+        <svg width="188" height="188" viewBox="0 0 188 188" role="img" aria-label="D-pad and two action buttons. Left and right move, A jumps, B runs.">
+          <rect x="2" y="2" width="184" height="184" fill="#FFF8E8" stroke="#111318" stroke-width="2"/>
+          <path d="M64 38 h52 v22 h22 v52 h-22 v22 h-52 v-22 h-22 v-52 h22 z" fill="#111318"/>
+          <rect x="86" y="48" width="8" height="14" fill="#F7C948"/>
+          <rect x="86" y="118" width="8" height="14" fill="#F7C948"/>
+          <rect x="48" y="86" width="14" height="8" fill="#F7C948"/>
+          <rect x="118" y="86" width="14" height="8" fill="#F7C948"/>
+          <rect x="82" y="82" width="16" height="16" fill="#F24A2E"/>
+          <rect x="140" y="26" width="30" height="30" fill="#F24A2E" stroke="#111318" stroke-width="2"/>
+          <rect x="18" y="132" width="30" height="30" fill="#F7C948" stroke="#111318" stroke-width="2"/>
+          <text x="155" y="46" font-family="'Press Start 2P',monospace" font-size="11" fill="#FFF8E8" text-anchor="middle">A</text>
+          <text x="33" y="152" font-family="'Press Start 2P',monospace" font-size="11" fill="#111318" text-anchor="middle">B</text>
+        </svg>
+        <div class="dtext">
+          <h3>THE DECK</h3>
+          <p>Left and right walk, holding B turns a walk into a run. A jumps — tap it lightly for a short hop, hold it for the full arc. The red key restarts the level from the last safe step.</p>
+        </div>
+      </div>
+
+      <div class="diorama" aria-label="Control deck diorama">
+        <div class="tile"><div class="cap">◀</div><div class="capname">LEFT</div><div class="capsub">Arrow / A key</div></div>
+        <div class="tile"><div class="cap">▶</div><div class="capname">RIGHT</div><div class="capsub">Arrow / D key</div></div>
+        <div class="tile"><div class="cap gold">A</div><div class="capname">JUMP</div><div class="capsub">Space / W</div></div>
+        <div class="tile"><div class="cap red">B</div><div class="capname">RUN</div><div class="capsub">Shift key</div></div>
+        <div class="tile"><div class="cap">P</div><div class="capname">PAUSE</div><div class="capsub">P or Esc</div></div>
+        <div class="tile"><div class="cap gold">R</div><div class="capname">RESET</div><div class="capsub">R key</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SIGNATURE REVEAL ============ -->
+<section class="reveal-band" id="reveal">
+  <div class="wrap">
+    <div class="reveal-head">
+      <h2>THE CAMERA<br>SHOWS THE WAY.</h2>
+      <div class="reveal-stages" id="stageTags">
+        <div class="stage-tag on" data-stage="0">LOOK AROUND</div>
+        <div class="stage-tag" data-stage="1">FIND THE COIN</div>
+        <div class="stage-tag" data-stage="2">DASH TO THE CASTLE</div>
+      </div>
+    </div>
+
+    <div class="reveal-frame" id="revealFrame">
+      <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A three stage view of World 1-1: a wide meadow, a coin lit on the hill path, and the camera tilting up toward the castle.">
+        <!-- sky -->
+        <rect x="0" y="0" width="1200" height="420" fill="#17243F"/>
+        <rect x="0" y="0" width="1200" height="180" fill="#1E2E52"/>
+        <!-- stars -->
+        <g fill="#FFF8E8" opacity=".8">
+          <rect x="120" y="46" width="6" height="6"/><rect x="320" y="88" width="6" height="6"/>
+          <rect x="520" y="38" width="6" height="6"/><rect x="760" y="70" width="6" height="6"/>
+          <rect x="980" y="30" width="6" height="6"/><rect x="1120" y="96" width="6" height="6"/>
+        </g>
+        <!-- far hills -->
+        <path d="M-100 300 L120 170 L340 300 Z" fill="#24406B"/>
+        <path d="M260 300 L520 150 L780 300 Z" fill="#2C4C7C"/>
+        <path d="M700 300 L940 178 L1180 300 Z" fill="#24406B"/>
+        <!-- ground -->
+        <rect x="0" y="300" width="1200" height="120" fill="#66B83E"/>
+        <rect x="0" y="300" width="1200" height="16" fill="#3F8B2A"/>
+        <rect x="0" y="330" width="1200" height="90" fill="#B85C32"/>
+        <!-- pipe -->
+        <g id="rvPipe">
+          <rect x="180" y="242" width="72" height="58" fill="#4FA84A"/>
+          <rect x="172" y="232" width="88" height="18" fill="#5FC257"/>
+          <rect x="188" y="250" width="10" height="50" fill="#2E6B2C"/>
+        </g>
+        <!-- brick row -->
+        <g fill="#C4703C" stroke="#8A4522" stroke-width="3">
+          <rect x="360" y="212" width="52" height="52"/><rect x="412" y="212" width="52" height="52"/>
+          <rect x="464" y="212" width="52" height="52"/>
+        </g>
+        <!-- coin (stage 2 highlight) -->
+        <g id="rvCoin">
+          <rect x="600" y="176" width="34" height="52" fill="#C79418"/>
+          <rect x="606" y="182" width="22" height="40" fill="#F7C948"/>
+          <rect x="612" y="192" width="8" height="20" fill="#FFF8E8"/>
+        </g>
+        <g id="rvCoinGlow" opacity="0">
+          <rect x="588" y="164" width="58" height="76" fill="none" stroke="#F7C948" stroke-width="4"/>
+        </g>
+        <!-- flagpole -->
+        <g id="rvFlag">
+          <rect x="856" y="112" width="12" height="188" fill="#8C93A3"/>
+          <rect x="836" y="96" width="52" height="20" fill="#F24A2E"/>
+          <rect x="868" y="132" width="52" height="38" fill="#66B83E"/>
+        </g>
+        <!-- castle -->
+        <g id="rvCastle">
+          <rect x="980" y="176" width="200" height="124" fill="#B85C32"/>
+          <rect x="980" y="160" width="32" height="20" fill="#B85C32"/>
+          <rect x="1032" y="160" width="32" height="20" fill="#B85C32"/>
+          <rect x="1084" y="160" width="32" height="20" fill="#B85C32"/>
+          <rect x="1136" y="160" width="32" height="20" fill="#B85C32"/>
+          <rect x="1052" y="212" width="56" height="88" fill="#111318" id="rvDoor"/>
+          <rect x="1000" y="200" width="26" height="26" fill="#17243F"/>
+          <rect x="1136" y="200" width="26" height="26" fill="#17243F"/>
+        </g>
+        <!-- camera frame -->
+        <g id="rvCamFrame">
+          <rect x="150" y="120" width="620" height="230" fill="none" stroke="#F7C948" stroke-width="4"/>
+          <rect x="150" y="120" width="26" height="26" fill="#F7C948"/>
+          <rect x="744" y="120" width="26" height="26" fill="#F7C948"/>
+          <rect x="150" y="324" width="26" height="26" fill="#F7C948"/>
+          <rect x="744" y="324" width="26" height="26" fill="#F7C948"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="reveal-caption">
+      <div>
+        <div class="rc-t" id="rcTitle">LOOK AROUND</div>
+        <div class="rc-p" id="rcText">The world starts wide. Every platform, pipe and hill is placed by hand — 240 tiles of meadow, cave and castle approach.</div>
+      </div>
+      <div class="reveal-labels" id="rvLabels">
+        <span class="on">The Green Hill</span>
+        <span>The Underground Pipe</span>
+        <span>The Night Castle</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORLD ============ -->
+<section class="world" id="world">
+  <div class="wrap world-grid">
+    <div class="tiles">
+      <article class="tile-card rv">
+        <div class="tile-art">
+          <svg viewBox="0 0 200 200" role="img" aria-label="The Green Hill: grass, a coin, and a cloud.">
+            <rect width="200" height="200" fill="#72D5E8"/>
+            <rect y="150" width="200" height="50" fill="#B85C32"/>
+            <rect y="150" width="200" height="16" fill="#66B83E"/>
+            <rect y="150" width="200" height="6" fill="#3F8B2A"/>
+            <rect x="30" y="118" width="34" height="32" fill="#C79418"/>
+            <rect x="37" y="125" width="20" height="18" fill="#F7C948"/>
+            <rect x="120" y="122" width="52" height="28" fill="#FFF8E8"/>
+            <rect x="108" y="132" width="76" height="18" fill="#FFF8E8"/>
+            <rect x="132" y="110" width="26" height="14" fill="#FFF8E8"/>
+            <rect x="86" y="86" width="46" height="18" fill="#FFF8E8"/>
+            <rect x="96" y="76" width="26" height="12" fill="#FFF8E8"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="badge">Zone 01</div>
+          <h3>THE GREEN HILL</h3>
+          <p>Warm daylight, soft clouds, and the first jump. Learn the timing before the terrain gets serious.</p>
+        </div>
+      </article>
+
+      <article class="tile-card rv">
+        <div class="tile-art">
+          <svg viewBox="0 0 200 200" role="img" aria-label="The Underground Pipe: brick wall, green pipe, coins and a spike.">
+            <rect width="200" height="200" fill="#24395F"/>
+            <rect y="152" width="200" height="48" fill="#8C93A3"/>
+            <rect y="152" width="200" height="8" fill="#5D6472"/>
+            <g fill="#C4703C" stroke="#8A4522" stroke-width="3">
+              <rect x="16" y="30" width="42" height="28"/><rect x="58" y="30" width="42" height="28"/>
+              <rect x="36" y="58" width="42" height="28"/><rect x="120" y="30" width="42" height="28"/>
+            </g>
+            <rect x="118" y="104" width="60" height="48" fill="#4FA84A"/>
+            <rect x="110" y="94" width="76" height="16" fill="#5FC257"/>
+            <rect x="130" y="112" width="10" height="40" fill="#2E6B2C"/>
+            <rect x="30" y="112" width="22" height="30" fill="#F7C948"/>
+            <rect x="35" y="118" width="12" height="18" fill="#FFF8E8"/>
+            <path d="M76 152 l12 -22 l12 22 z" fill="#8C93A3"/>
+            <path d="M100 152 l12 -22 l12 22 z" fill="#8C93A3"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="badge">Zone 02</div>
+          <h3>THE UNDERGROUND PIPE</h3>
+          <p>Brick, shadow, and tight spacing. Watch the ceiling and keep the run going.</p>
+        </div>
+      </article>
+
+      <article class="tile-card rv">
+        <div class="tile-art">
+          <svg viewBox="0 0 200 200" role="img" aria-label="The Night Castle: flagpole, stars, and a castle gate.">
+            <rect width="200" height="200" fill="#17243F"/>
+            <g fill="#FFF8E8"><rect x="28" y="30" width="6" height="6"/><rect x="70" y="52" width="6" height="6"/><rect x="150" y="26" width="6" height="6"/></g>
+            <rect y="156" width="200" height="44" fill="#B85C32"/>
+            <rect y="156" width="200" height="12" fill="#5D6472"/>
+            <rect x="34" y="66" width="10" height="90" fill="#8C93A3"/>
+            <rect x="22" y="52" width="34" height="16" fill="#F24A2E"/>
+            <rect x="44" y="80" width="34" height="26" fill="#66B83E"/>
+            <rect x="108" y="92" width="72" height="64" fill="#B85C32"/>
+            <rect x="108" y="82" width="18" height="12" fill="#B85C32"/>
+            <rect x="136" y="82" width="18" height="12" fill="#B85C32"/>
+            <rect x="164" y="82" width="16" height="12" fill="#B85C32"/>
+            <rect x="132" y="118" width="26" height="38" fill="#111318"/>
+            <rect x="116" y="102" width="16" height="16" fill="#F7C948"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="badge">Zone 03</div>
+          <h3>THE NIGHT CASTLE</h3>
+          <p>Blue-black air and a red flag in the distance. The route is clear. Your timing is not.</p>
+        </div>
+      </article>
+    </div>
+
+    <aside class="stats rv">
+      <h3>WORLD 1-1 / MAP DATA</h3>
+      <div class="stat-row"><span class="k">World</span><span class="v">1-1</span></div>
+      <div class="stat-row"><span class="k">Terrain</span><span class="v">GRASS</span></div>
+      <div class="stat-row"><span class="k">Sky</span><span class="v">DAY</span></div>
+      <div class="stat-row"><span class="k">Threats</span><span class="v">GOOMBA</span></div>
+      <div class="stat-row"><span class="k">Goal</span><span class="v">FLAGPOLE</span></div>
+      <div class="stat-row"><span class="k">Coins</span><span class="v">×36</span></div>
+      <div class="stat-row"><span class="k">Lives</span><span class="v">×03</span></div>
+      <p class="note">The level is 240 tiles wide and holds three environments. Camera movement is fixed to the ground line and snaps to whole pixels, so the world never shimmers while Mario runs.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ SCOREBOARD ============ -->
+<section class="score-band">
+  <svg class="hills" viewBox="0 0 1440 180" preserveAspectRatio="none" aria-hidden="true">
+    <rect y="130" width="1440" height="50" fill="#66B83E"/>
+    <rect y="130" width="1440" height="10" fill="#3F8B2A"/>
+    <path d="M0 130 L160 44 L320 130 Z" fill="#3F8B2A"/>
+    <path d="M420 130 L600 30 L780 130 Z" fill="#4C9B33"/>
+    <path d="M900 130 L1050 52 L1200 130 Z" fill="#3F8B2A"/>
+  </svg>
+  <div class="wrap">
+    <div class="score-panel rv">
+      <div>
+        <h2>READY FOR THE<br>NEXT RUN?</h2>
+        <div class="sub">World 1-1 · <span id="footScore">Best 002400</span> · 1 player game</div>
+      </div>
+      <div class="plate-actions">
+        <button class="btn" id="restartBtn3">RESET WORLD</button>
+        <a class="btn ghost" href="#play">BACK TO SCREEN</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="f1">MARIO GAME WORLD<br>WORLD 1-1</div>
+    <div class="f2">A tiny platform game with a big sky. / 2026</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   1. CONSTANTS
+   ========================================================= */
+var T = 32, COLS = 240, ROWS = 12;
+var W = 640, H = 360;
+var GRAVITY = 1800, MAX_FALL = 760;
+var ACCEL_WALK = 1800, ACCEL_RUN = 3000, FRICTION = 2000;
+var MAX_WALK = 220, MAX_RUN = 340;
+var JUMP_V = 610, JUMP_CUT = 220;
+var COYOTE = 0.09, BUFFER = 0.12;
+var STEP = 1/60;
+
+var EMPTY=0, GROUND=1, BRICK=2, QUESTION=3, USED=4, STONE=5, PIPE=6, SPRING=7, SPIKE=8;
+var SOLID = [0,1,1,1,1,1,1,1,0];
+
+var C = {
+  skyTop:'#72D5E8', skyBot:'#A6E9F3',
+  caveTop:'#17243F', caveBot:'#24395F',
+  nightTop:'#17243F', nightBot:'#2C4C7C',
+  grass:'#66B83E', grassD:'#3F8B2A',
+  dirt:'#B85C32', dirtD:'#8A3F20',
+  brick:'#C4703C', brickD:'#8A4522',
+  stone:'#8C93A3', stoneD:'#5D6472',
+  gold:'#F7C948', goldD:'#C79418',
+  red:'#F24A2E', redD:'#B52E1B',
+  white:'#FFF8E8', ink:'#111318',
+  pipe:'#4FA84A', pipeHi:'#5FC257', pipeD:'#2E6B2C',
+  skin:'#F7C9A0', blue:'#2D5BFF', brown:'#7A3B18'
+};
+
+/* =========================================================
+   2. LEVEL DATA
+   ========================================================= */
+var GROUND_SEGS = [[0,43],[48,88],[93,132],[138,180],[186,239]];
+var PLATFORMS = [
+  [16,6,3,BRICK],[21,6,2,BRICK],[22,3,2,BRICK],[70,6,4,BRICK],
+  [96,7,3,STONE],[103,6,3,STONE],[110,7,3,STONE],[117,5,4,STONE],[126,7,4,STONE],
+  [145,6,4,BRICK],[155,6,3,BRICK],[168,6,4,BRICK]
+];
+var QUESTS = [
+  [19,6,'coin'],[25,3,'mushroom'],[76,6,'coin'],[80,3,'mushroom'],
+  [112,4,'coin'],[120,3,'mushroom'],[150,6,'coin'],[160,3,'mushroom']
+];
+var EXTRA_COINS = [
+  [44,6],[45,5],[46,5],[47,6],[89,5],[90,5],[91,5],
+  [133,5],[134,5],[135,5],[136,5],[181,5],[182,5],[183,5],[184,5],[185,6],
+  [190,6],[191,6],[192,6],[205,7],[206,7],[207,7]
+];
+var PIPES = [[28,2],[34,3],[57,2],[66,3],[128,2],[162,3]];
+var SPRINGS = [[52,8],[142,8]];
+var SPIKES = [[61,8],[62,8],[100,8],[101,8],[170,8],[171,8]];
+var GOOMBAS = [22,33,42,50,63,75,84,98,112,122,130,142,152,165,175,190,196];
+var STAIR_START = 200, STAIR_N = 7;
+var FLAG_COL = 210;
+var CASTLE_COL = 216;
+
+/* =========================================================
+   3. STATE
+   ========================================================= */
+var grid = new Uint8Array(COLS*ROWS);
+var coins = [], enemies = [], popups = [];
+var player = null, cam = {x:0, y:0};
+var mode = 'title';              // title | playing | paused | gameover | won
+var score = 0, coinCount = 0, lives = 3, timeLeft = 300, best = 2400;
+var timeAcc = 0, winTimer = 0, flagY = 0;
+
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* =========================================================
+   4. LEVEL BUILD
+   ========================================================= */
+function setTile(c,r,t){ if(c>=0&&c<COLS&&r>=0&&r<ROWS) grid[r*COLS+c]=t; }
+function getTile(c,r){ if(c<0||c>=COLS||r<0||r>=ROWS) return (r<0||r>=ROWS)?EMPTY:STONE; return grid[r*COLS+c]; }
+function fillRect(c0,r0,c1,r1,t){
+  for(var r=r0;r<=r1;r++) for(var c=c0;c<=c1;c++) setTile(c,r,t);
+}
+function isSolid(c,r){ return SOLID[getTile(c,r)] === 1; }
+
+function buildLevel(){
+  for(var i=0;i<grid.length;i++) grid[i]=EMPTY;
+
+  for(var g=0;g<GROUND_SEGS.length;g++) fillRect(GROUND_SEGS[g][0],9,GROUND_SEGS[g][1],11,GROUND);
+  fillRect(93,0,137,1,STONE);                     // cave ceiling
+
+  for(var p=0;p<PLATFORMS.length;p++){
+    var pl = PLATFORMS[p];
+    fillRect(pl[0],pl[1],pl[0]+pl[2]-1,pl[1],pl[3]);
+    for(var k=0;k<pl[2];k++) coins.push({x:(pl[0]+k)*T+T/2, y:(pl[1]-1)*T+T/2, got:false, t:Math.random()*6});
+  }
+  for(var q=0;q<QUESTS.length;q++){
+    var Q = QUESTS[q];
+    setTile(Q[0],Q[1],QUESTION);
+  }
+  for(var e=0;e<EXTRA_COINS.length;e++){
+    coins.push({x:EXTRA_COINS[e][0]*T+T/2, y:EXTRA_COINS[e][1]*T+T/2, got:false, t:Math.random()*6});
+  }
+  for(var pi=0;pi<PIPES.length;pi++){
+    var pc = PIPES[pi][0], ph = PIPES[pi][1];
+    fillRect(pc, 9-ph, pc+1, 8, PIPE);
+  }
+  for(var s=0;s<SPRINGS.length;s++) setTile(SPRINGS[s][0],SPRINGS[s][1],SPRING);
+  for(var sp=0;sp<SPIKES.length;sp++) setTile(SPIKES[sp][0],SPIKES[sp][1],SPIKE);
+
+  // staircase to the flag
+  for(var st=0;st<STAIR_N;st++) fillRect(STAIR_START+st, 8-st, STAIR_START+st, 11, STONE);
+
+  // enemies
+  enemies = [];
+  for(var gm=0;gm<GOOMBAS.length;gm++){
+    enemies.push({
+      x: GOOMBAS[gm]*T+2, y: 9*T-30, w:28, h:30,
+      vx: -46, vy:0, onGround:false, dead:false, deadT:0, anim:Math.random()*6
+    });
+  }
+}
+
+function makePlayer(){
+  return {
+    x: 3*T, y: 9*T-40, w:22, h:40,
+    vx:0, vy:0, onGround:false, face:1,
+    coyote:0, buffer:0, jumpHeld:false,
+    invuln:0, power:false, anim:0, checkpoint:3*T, dead:false, deadT:0
+  };
+}
+
+function resetWorld(){
+  buildLevel();
+  player = makePlayer();
+  cam.x = 0; cam.y = 0;
+  score = 0; coinCount = 0; lives = 3; timeLeft = 300;
+  timeAcc = 0; winTimer = 0; flagY = 0;
+  popups = [];
+  updateHUD();
+}
+
+/* =========================================================
+   5. AUDIO
+   ========================================================= */
+var actx = null, soundOn = true;
+function initAudio(){
+  if(actx) return;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) actx = new AC();
+  }catch(err){ actx = null; }
+}
+function beep(freq, dur, type, vol, slide){
+  if(!soundOn || !actx) return;
+  try{
+    var t0 = actx.currentTime;
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t0);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,slide), t0+dur);
+    g.gain.setValueAtTime(vol || 0.06, t0);
+    g.gain.exponentialRampToValueAtTime(0.0008, t0+dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0+dur+0.02);
+  }catch(err){}
+}
+var S = {
+  jump:   function(){ beep(420,0.16,'square',0.05,760); },
+  coin:   function(){ beep(988,0.07,'square',0.05,1319); },
+  stomp:  function(){ beep(220,0.12,'square',0.05,120); },
+  bump:   function(){ beep(160,0.08,'square',0.05,90); },
+  power:  function(){ beep(330,0.22,'triangle',0.07,880); },
+  hurt:   function(){ beep(300,0.28,'sawtooth',0.05,90); },
+  clear:  function(){ beep(523,0.14,'square',0.06,659); setTimeout(function(){beep(659,0.14,'square',0.06,784);},150); setTimeout(function(){beep(784,0.28,'square',0.06,1046);},310); },
+  over:   function(){ beep(392,0.18,'triangle',0.06,196); setTimeout(function(){beep(196,0.5,'triangle',0.06,98);},200); }
+};
+
+/* =========================================================
+   6. INPUT
+   ========================================================= */
+var input = { left:false, right:false, jump:false, run:false, jumpEdge:false };
+
+function pressJump(){
+  if(!input.jump){ input.jumpEdge = true; }
+  input.jump = true;
+}
+function releaseJump(){
+  input.jump = false;
+  if(player && player.vy < -JUMP_CUT) player.vy = -JUMP_CUT;
+}
+
+var KEYMAP = {
+  ArrowLeft:'left', KeyA:'left',
+  ArrowRight:'right', KeyD:'right',
+  ArrowUp:'jump', KeyW:'jump', Space:'jump',
+  ShiftLeft:'run', ShiftRight:'run'
+};
+
+window.addEventListener('keydown', function(e){
+  var code = e.code;
+  if(KEYMAP[code]){
+    e.preventDefault();
+    initAudio();
+    if(mode === 'title' && (code === 'Space' || code === 'Enter')){ startGame(); return; }
+    if(mode === 'gameover' || mode === 'won'){
+      if(code === 'Space' || code === 'Enter'){ startGame(); return; }
+    }
+    if(mode === 'paused' && (code === 'Space')){ togglePause(); return; }
+    if(KEYMAP[code] === 'jump') pressJump();
+    else input[KEYMAP[code]] = true;
+    setKeyVisual(KEYMAP[code], true);
+    return;
+  }
+  if(code === 'KeyR'){ e.preventDefault(); initAudio(); startGame(); }
+  if(code === 'KeyP' || code === 'Escape'){ e.preventDefault(); togglePause(); }
+  if(code === 'Enter'){ e.preventDefault(); initAudio(); if(mode !== 'playing') startGame(); }
+});
+
+window.addEventListener('keyup', function(e){
+  var code = e.code;
+  if(KEYMAP[code]){
+    e.preventDefault();
+    if(KEYMAP[code] === 'jump') releaseJump();
+    else input[KEYMAP[code]] = false;
+    setKeyVisual(KEYMAP[code], false);
+  }
+});
+
+function setKeyVisual(key, down){
+  var nodes = document.querySelectorAll('[data-key="'+key+'"]');
+  for(var i=0;i<nodes.length;i++){
+    if(down) nodes[i].classList.add('is-down');
+    else nodes[i].classList.remove('is-down');
+  }
+}
+
+/* deck + touch buttons */
+function bindHoldButton(el){
+  var key = el.getAttribute('data-key');
+  if(key === 'pause'){
+    el.addEventListener('click', function(){ initAudio(); togglePause(); });
+    return;
+  }
+  var down = function(e){
+    e.preventDefault(); initAudio();
+    if(mode === 'title' || mode === 'gameover' || mode === 'won') startGame();
+    if(key === 'jump') pressJump(); else input[key] = true;
+    el.classList.add('is-down');
+  };
+  var up = function(e){
+    if(e) e.preventDefault();
+    if(key === 'jump') releaseJump(); else input[key] = false;
+    el.classList.remove('is-down');
+  };
+  el.addEventListener('pointerdown', down);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointerleave', up);
+  el.addEventListener('keydown', function(e){ if(e.code==='Space'||e.code==='Enter'){ e.preventDefault(); down(e);} });
+  el.addEventListener('keyup', function(e){ if(e.code==='Space'||e.code==='Enter'){ up(e);} });
+}
+var holdEls = document.querySelectorAll('[data-key]');
+for(var hi=0; hi<holdEls.length; hi++) bindHoldButton(holdEls[hi]);
+
+/* =========================================================
+   7. GAME FLOW
+   ========================================================= */
+var plate = document.getElementById('plate');
+var plate2 = document.getElementById('plate2');
+var plate2Title = document.getElementById('plate2Title');
+var plate2Sub = document.getElementById('plate2Sub');
+var statusText = document.getElementById('statusText');
+var led = document.getElementById('led');
+
+function startGame(){
+  initAudio();
+  resetWorld();
+  mode = 'playing';
+  plate.hidden = true;
+  plate2.hidden = true;
+  led.classList.add('on');
+  statusText.innerHTML = 'READY FOR PLAYER 1<br>WORLD 1-1 · GAME RUNNING';
+}
+function togglePause(){
+  if(mode === 'playing'){
+    mode = 'paused';
+    plate2.hidden = false;
+    plate2Title.innerHTML = 'PAUSED<span>WORLD 1-1</span>';
+    plate2Sub.textContent = 'PRESS P TO CONTINUE';
+    statusText.innerHTML = 'READY FOR PLAYER 1<br>WORLD 1-1 · GAME PAUSED';
+  }else if(mode === 'paused'){
+    mode = 'playing';
+    plate2.hidden = true;
+    statusText.innerHTML = 'READY FOR PLAYER 1<br>WORLD 1-1 · GAME RUNNING';
+  }
+}
+function gameOver(){
+  mode = 'gameover';
+  plate2.hidden = false;
+  plate2Title.innerHTML = 'GAME OVER<span>WORLD 1-1</span>';
+  plate2Sub.textContent = 'PRESS R TO RESTART';
+  statusText.innerHTML = 'READY FOR PLAYER 1<br>WORLD 1-1 · GAME OVER';
+  led.classList.remove('on');
+  S.over();
+  saveBest();
+}
+function winGame(){
+  mode = 'won';
+  score += timeLeft * 50;
+  updateHUD();
+  plate2.hidden = false;
+  plate2Title.innerHTML = 'COURSE CLEAR<span>WORLD 1-1</span>';
+  plate2Sub.textContent = 'PRESS R FOR A NEW RUN';
+  statusText.innerHTML = 'READY FOR PLAYER 1<br>WORLD 1-1 · COURSE CLEAR';
+  S.clear();
+  saveBest();
+}
+function saveBest(){
+  if(score > best){
+    best = score;
+    document.getElementById('bestScore').textContent = 'BEST ' + pad(best, 6);
+    document.getElementById('footScore').textContent = 'Best ' + pad(best, 6);
+  }
+}
+
+document.getElementById('startBtn').addEventListener('click', function(){ initAudio(); startGame(); });
+document.getElementById('railStart').addEventListener('click', function(){ initAudio(); setTimeout(startGame, 10); });
+document.getElementById('resumeBtn').addEventListener('click', function(){
+  initAudio();
+  if(mode === 'paused') togglePause(); else startGame();
+});
+document.getElementById('restartBtn').addEventListener('click', function(){ initAudio(); startGame(); });
+document.getElementById('restartBtn2').addEventListener('click', function(){ initAudio(); startGame(); });
+document.getElementById('restartBtn3').addEventListener('click', function(){ initAudio(); startGame(); document.getElementById('play').scrollIntoView({block:'start'}); });
+document.getElementById('pauseIcon').addEventListener('click', function(){ initAudio(); togglePause(); });
+
+function setSound(on){
+  soundOn = on;
+  var b = document.getElementById('soundBtn');
+  b.textContent = on ? 'SOUND ON' : 'SOUND OFF';
+  document.getElementById('soundIcon').setAttribute('aria-pressed', on ? 'true' : 'false');
+  document.getElementById('wave1').style.opacity = on ? '1' : '0.15';
+  if(on){ initAudio(); beep(660,0.08,'square',0.05,880); }
+}
+document.getElementById('soundBtn').addEventListener('click', function(){ initAudio(); setSound(!soundOn); });
+document.getElementById('soundIcon').addEventListener('click', function(){ initAudio(); setSound(!soundOn); });
+
+/* =========================================================
+   8. PHYSICS
+   ========================================================= */
+function moveBody(b, dt){
+  // horizontal
+  b.x += b.vx * dt;
+  var c0 = Math.floor(b.x / T), c1 = Math.floor((b.x + b.w - 1) / T);
+  var r0 = Math.floor(b.y / T), r1 = Math.floor((b.y + b.h - 1) / T);
+  var c, r;
+  if(b.vx > 0){
+    for(r=r0;r<=r1;r++) if(isSolid(c1,r)){ b.x = c1*T - b.w; b.vx = 0; b.hitWall = true; break; }
+  }else if(b.vx < 0){
+    for(r=r0;r<=r1;r++) if(isSolid(c0,r)){ b.x = (c0+1)*T; b.vx = 0; b.hitWall = true; break; }
+  }
+  if(b.x < 0){ b.x = 0; b.vx = 0; }
+
+  // vertical
+  b.y += b.vy * dt;
+  c0 = Math.floor(b.x / T); c1 = Math.floor((b.x + b.w - 1) / T);
+  r0 = Math.floor(b.y / T); r1 = Math.floor((b.y + b.h - 1) / T);
+  b.onGround = false;
+  if(b.vy > 0){
+    for(c=c0;c<=c1;c++) if(isSolid(c,r1)){
+      var t = getTile(c,r1);
+      b.y = r1*T - b.h; b.vy = 0; b.onGround = true;
+      if(t === SPRING && b === player){ b.vy = -820; b.onGround = false; S.power(); }
+      break;
+    }
+  }else if(b.vy < 0){
+    for(c=c0;c<=c1;c++) if(isSolid(c,r0)){
+      b.y = (r0+1)*T; b.vy = 0;
+      if(b === player) bumpBlock(c, r0);
+      break;
+    }
+  }
+}
+
+function bumpBlock(c, r){
+  var t = getTile(c,r);
+  if(t === QUESTION){
+    setTile(c,r,USED);
+    var qIndex = -1;
+    for(var i=0;i<QUESTS.length;i++) if(QUESTS[i][0]===c && QUESTS[i][1]===r) qIndex = i;
+    var content = qIndex >= 0 ? QUESTS[qIndex][2] : 'coin';
+    if(content === 'mushroom'){
+      popups.push({x:c*T+T/2, y:r*T, kind:'mushroom', t:0, vy:-40, vx:42});
+      S.power();
+    }else{
+      coinCount++; score += 200;
+      popups.push({x:c*T+T/2, y:r*T, kind:'coin', t:0, vy:-260});
+      S.coin();
+      updateHUD();
+    }
+    S.bump();
+  }else if(t === BRICK){
+    S.bump();
+    popups.push({x:c*T+T/2, y:r*T, kind:'dust', t:0, vy:-120});
+  }
+}
+
+function overlap(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function hurtPlayer(){
+  if(player.invuln > 0) return;
+  if(player.power){
+    player.power = false;
+    player.h = 40; player.y += 12;
+    player.invuln = 1.4;
+    S.hurt();
+    return;
+  }
+  lives--;
+  S.hurt();
+  updateHUD();
+  if(lives <= 0){ gameOver(); return; }
+  player.dead = true; player.deadT = 0;
+  player.vy = -420; player.vx = 0;
+}
+
+/* =========================================================
+   9. UPDATE
+   ========================================================= */
+function step(dt){
+  if(mode !== 'playing') return;
+
+  var p = player;
+
+  if(p.dead){
+    p.deadT += dt;
+    p.vy += GRAVITY * dt;
+    p.y += p.vy * dt;
+    if(p.deadT > 1.1){
+      p.dead = false;
+      p.x = p.checkpoint; p.y = 9*T - 44;
+      p.vx = 0; p.vy = 0; p.invuln = 1.4;
+    }
+    return;
+  }
+
+  /* --- horizontal intent --- */
+  var target = 0;
+  if(input.left && !input.right) target = -1;
+  else if(input.right && !input.left) target = 1;
+
+  var maxSpeed = input.run ? MAX_RUN : MAX_WALK;
+  var accel = input.run ? ACCEL_RUN : ACCEL_WALK;
+
+  if(target !== 0){
+    p.vx += target * accel * dt;
+    if(p.vx > maxSpeed) p.vx = Math.max(maxSpeed, p.vx - FRICTION*dt);
+    if(p.vx < -maxSpeed) p.vx = Math.min(-maxSpeed, p.vx + FRICTION*dt);
+    p.face = target;
+  }else{
+    if(p.vx > 0) p.vx = Math.max(0, p.vx - FRICTION*dt);
+    else if(p.vx < 0) p.vx = Math.min(0, p.vx + FRICTION*dt);
+  }
+
+  /* --- jump --- */
+  if(p.onGround) p.coyote = COYOTE; else p.coyote -= dt;
+  if(input.jumpEdge){ p.buffer = BUFFER; input.jumpEdge = false; }
+  else p.buffer -= dt;
+
+  if(p.buffer > 0 && p.coyote > 0){
+    p.vy = -JUMP_V;
+    p.onGround = false;
+    p.coyote = 0; p.buffer = 0;
+    S.jump();
+  }
+
+  /* --- gravity + move --- */
+  p.vy += GRAVITY * dt;
+  if(p.vy > MAX_FALL) p.vy = MAX_FALL;
+
+  moveBody(p, dt);
+
+  /* --- animation --- */
+  p.anim += Math.abs(p.vx) * dt * 0.06;
+  if(p.invuln > 0) p.invuln -= dt;
+
+  /* --- checkpoint --- */
+  if(p.onGround && Math.abs(p.vx) < 40 && p.y < 9*T){
+    p.checkpoint = p.x;
+  }
+  if(p.onGround && p.y >= 9*T - 42 && p.x > p.checkpoint + 80) p.checkpoint = p.x;
+
+  /* --- coins --- */
+  for(var i=0;i<coins.length;i++){
+    var co = coins[i];
+    if(co.got) continue;
+    co.t += dt * 4;
+    if(Math.abs((p.x + p.w/2) - co.x) < 26 && Math.abs((p.y + p.h/2) - co.y) < 30){
+      co.got = true; coinCount++; score += 200;
+      popups.push({x:co.x, y:co.y, kind:'spark', t:0, vy:-120});
+      S.coin();
+      updateHUD();
+    }
+  }
+
+  /* --- enemies --- */
+  for(var e=0;e<enemies.length;e++){
+    var en = enemies[e];
+    if(en.dead){ en.deadT += dt; continue; }
+    if(Math.abs(en.x - p.x) > 720) continue;
+
+    en.anim += dt * 6;
+    en.vy += GRAVITY * dt;
+    if(en.vy > MAX_FALL) en.vy = MAX_FALL;
+    en.hitWall = false;
+    moveBody(en, dt);
+
+    if(en.hitWall) en.vx = -en.vx;
+
+    // edge detection
+    if(en.onGround){
+      var aheadC = Math.floor((en.x + (en.vx > 0 ? en.w + 4 : -4)) / T);
+      var belowR = Math.floor((en.y + en.h + 6) / T);
+      if(!isSolid(aheadC, belowR)) en.vx = -en.vx;
+    }
+
+    if(en.y > H + 400){ en.dead = true; continue; }
+
+    if(overlap(p, en)){
+      var stomping = p.vy > 60 && (p.y + p.h) < en.y + en.h * 0.6;
+      if(stomping){
+        en.dead = true; en.deadT = 0;
+        p.vy = -400;
+        score += 100;
+        popups.push({x:en.x+en.w/2, y:en.y, kind:'spark', t:0, vy:-140});
+        S.stomp();
+        updateHUD();
+      }else{
+        hurtPlayer();
+      }
+    }
+  }
+
+  /* --- spikes --- */
+  var pc0 = Math.floor(p.x/T), pc1 = Math.floor((p.x+p.w-1)/T);
+  var pr0 = Math.floor(p.y/T), pr1 = Math.floor((p.y+p.h-1)/T);
+  for(var sc=pc0; sc<=pc1; sc++){
+    for(var sr=pr0; sr<=pr1; sr++){
+      if(getTile(sc,sr) === SPIKE){
+        var spx = {x:sc*T+4, y:sr*T+12, w:T-8, h:T-12};
+        if(overlap(p, spx)) hurtPlayer();
+      }
+    }
+  }
+
+  /* --- popups (mushroom, coins, dust) --- */
+  for(var pi2=popups.length-1; pi2>=0; pi2--){
+    var pu = popups[pi2];
+    pu.t += dt;
+    if(pu.kind === 'mushroom'){
+      pu.vy += GRAVITY * dt * 0.6;
+      pu.x += pu.vx * dt;
+      var mc = Math.floor((pu.x + 12) / T), mr = Math.floor((pu.y + 22) / T);
+      if(isSolid(mc, mr)){ pu.vx = -pu.vx; pu.x += pu.vx * dt * 2; }
+      pu.y += pu.vy * dt;
+      if(isSolid(Math.floor(pu.x/T), Math.floor((pu.y+24)/T))){ pu.vy = 0; pu.y = Math.floor((pu.y+24)/T)*T - 24; }
+      if(Math.abs((p.x+p.w/2) - pu.x) < 30 && Math.abs((p.y+p.h/2) - pu.y) < 34){
+        p.power = true; p.h = 52; p.y -= 12;
+        score += 1000;
+        popups.splice(pi2,1);
+        S.power();
+        updateHUD();
+        continue;
+      }
+      if(pu.t > 12) popups.splice(pi2,1);
+    }else{
+      pu.y += pu.vy * dt;
+      pu.vy += 500 * dt;
+      if(pu.t > 0.6) popups.splice(pi2,1);
+    }
+  }
+
+  /* --- fall off --- */
+  if(p.y > H + 200){
+    lives--;
+    S.hurt();
+    updateHUD();
+    if(lives <= 0){ gameOver(); return; }
+    p.x = p.checkpoint; p.y = 9*T - 44;
+    p.vx = 0; p.vy = 0; p.invuln = 1.4;
+  }
+
+  /* --- flag --- */
+  var flagX = FLAG_COL * T + 16;
+  if(p.x + p.w > flagX && mode === 'playing'){
+    winTimer += dt;
+    if(flagY < 150) flagY += 120 * dt;
+    if(winTimer > 0.9) winGame();
+  }
+
+  /* --- timer --- */
+  timeAcc += dt;
+  if(timeAcc >= 0.42){
+    timeAcc = 0;
+    timeLeft--;
+    if(timeLeft <= 0){ timeLeft = 0; hurtPlayer(); }
+    updateHUD();
+  }
+
+  /* --- camera --- */
+  var lead;
+  if(!p.onGround) lead = 0.30 * W;
+  else if(Math.abs(p.vx) > 40) lead = 0.38 * W;
+  else lead = 0.28 * W;
+
+  var targetX = p.x + p.w/2 - W * 0.5 + (p.face * lead * 0.45);
+  var maxX = COLS*T - W;
+  if(targetX < 0) targetX = 0;
+  if(targetX > maxX) targetX = maxX;
+
+  if(reduced){ cam.x = targetX; }
+  else { cam.x += (targetX - cam.x) * 0.12; }
+  cam.x = Math.round(cam.x);
+  cam.y = 0;
+}
+
+/* =========================================================
+   10. RENDER
+   ========================================================= */
+function lerpColor(a, b, t){
+  var ah = parseInt(a.slice(1),16), bh = parseInt(b.slice(1),16);
+  var ar = (ah>>16)&255, ag = (ah>>8)&255, ab = ah&255;
+  var br = (bh>>16)&255, bg = (bh>>8)&255, bb = bh&255;
+  var r = Math.round(ar + (br-ar)*t), g = Math.round(ag + (bg-ag)*t), bl = Math.round(ab + (bb-ab)*t);
+  return 'rgb('+r+','+g+','+bl+')';
+}
+
+function themeAt(x){
+  // 0 = meadow, 1 = cave, 2 = night
+  var caveStart = 93*T, caveEnd = 138*T;
+  if(x < caveStart - 260) return {a:0, b:0, t:0};
+  if(x < caveStart) return {a:0, b:1, t:(x-(caveStart-260))/260};
+  if(x < caveEnd - 200) return {a:1, b:1, t:0};
+  if(x < caveEnd) return {a:1, b:2, t:(x-(caveEnd-200))/200};
+  return {a:2, b:2, t:0};
+}
+var THEME_SKY = [[C.skyTop, C.skyBot, C.grass, C.grassD],[C.caveTop, C.caveBot, C.stoneD, '#3A4252'],[C.nightTop, C.nightBot, '#2C5B36', '#1C3B24']];
+
+function render(){
+  var camX = cam.x, camY = cam.y;
+  ctx.imageSmoothingEnabled = false;
+
+  /* sky */
+  var th = themeAt(camX + W/2);
+  var top = lerpColor(THEME_SKY[th.a][0], THEME_SKY[th.b][0], th.t);
+  var bot = lerpColor(THEME_SKY[th.a][1], THEME_SKY[th.b][1], th.t);
+  ctx.fillStyle = top; ctx.fillRect(0,0,W,H/2);
+  ctx.fillStyle = bot; ctx.fillRect(0,H/2,W,H/2);
+
+  /* stars in night / cave */
+  if(th.a >= 1 || th.t > 0.3){
+    ctx.fillStyle = 'rgba(255,248,232,0.75)';
+    for(var s=0;s<28;s++){
+      var sx = ((s*137) % 620) - (camX*0.12 % 620);
+      if(sx < -10) sx += 620;
+      var sy = 18 + ((s*61) % 150);
+      ctx.fillRect(Math.round(sx), sy, 3, 3);
+    }
+  }
+
+  /* far hills (parallax 0.28) */
+  var hillCol = lerpColor(THEME_SKY[th.a][3], THEME_SKY[th.b][3], th.t);
+  var hillOff = -(camX * 0.28) % 480;
+  ctx.fillStyle = hillCol;
+  for(var hh=0; hh<4; hh++){
+    var hx = hillOff + hh*480 - 120;
+    ctx.beginPath();
+    ctx.moveTo(hx, 300);
+    ctx.lineTo(hx + 120, 168);
+    ctx.lineTo(hx + 240, 300);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(hx + 200, 300);
+    ctx.lineTo(hx + 320, 196);
+    ctx.lineTo(hx + 440, 300);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* clouds (parallax 0.5) */
+  var cloudOff = -(camX * 0.5) % 420;
+  ctx.fillStyle = 'rgba(255,248,232,0.92)';
+  for(var ci=0; ci<5; ci++){
+    var cx = cloudOff + ci*420 - 60;
+    var cy = 34 + ((ci*47) % 70);
+    ctx.fillRect(Math.round(cx), cy, 74, 18);
+    ctx.fillRect(Math.round(cx+12), cy-12, 46, 14);
+    ctx.fillRect(Math.round(cx-16), cy+6, 106, 12);
+  }
+
+  /* ---- terrain ---- */
+  var cStart = Math.floor(camX / T) - 1, cEnd = Math.floor((camX + W) / T) + 1;
+  if(cStart < 0) cStart = 0;
+  if(cEnd > COLS-1) cEnd = COLS-1;
+
+  for(var c=cStart; c<=cEnd; c++){
+    for(var r=0; r<ROWS; r++){
+      var t = getTile(c,r);
+      if(t === EMPTY) continue;
+      drawTile(t, c, r, Math.round(c*T - camX), Math.round(r*T - camY), th, cStart, cEnd);
+    }
+  }
+
+  /* flagpole */
+  drawFlag(Math.round(FLAG_COL*T - camX), Math.round(camY));
+
+  /* castle */
+  drawCastle(Math.round(CASTLE_COL*T - camX), Math.round(camY));
+
+  /* coins */
+  for(var k=0;k<coins.length;k++){
+    var co = coins[k];
+    if(co.got) continue;
+    var x = Math.round(co.x - camX), y = Math.round(co.y - camY);
+    if(x < -30 || x > W+30) continue;
+    var wob = Math.sin(co.t) * 3;
+    drawCoin(x, y + wob);
+  }
+
+  /* enemies */
+  for(var e2=0;e2<enemies.length;e2++){
+    var en = enemies[e2];
+    if(en.dead && en.deadT > 0.45) continue;
+    var ex = Math.round(en.x - camX), ey = Math.round(en.y - camY);
+    if(ex < -60 || ex > W+60) continue;
+    drawGoomba(ex, ey, en);
+  }
+
+  /* popups */
+  for(var pu2=0;pu2<popups.length;pu2++){
+    var pp = popups[pu2];
+    var px = Math.round(pp.x - camX), py = Math.round(pp.y - camY);
+    if(pp.kind === 'mushroom'){ drawMushroom(px-14, py); }
+    else if(pp.kind === 'coin'){ drawCoin(px, py); }
+    else {
+      ctx.fillStyle = C.white;
+      ctx.fillRect(px-6, py-6, 6, 6); ctx.fillRect(px+2, py-2, 6, 6);
+    }
+  }
+
+  /* player */
+  drawPlayer(Math.round(player.x - camX), Math.round(player.y - camY));
+
+  /* vignette frame */
+  ctx.fillStyle = 'rgba(17,19,24,0.16)';
+  ctx.fillRect(0,0,W,4); ctx.fillRect(0,H-4,W,4);
+}
+
+function drawTile(t, c, r, x, y, th, cStart, cEnd){
+  var caveZone = (c >= 93 && c <= 137);
+  if(t === GROUND){
+    ctx.fillStyle = caveZone ? '#5D6472' : C.dirt;
+    ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = caveZone ? '#454C59' : C.dirtD;
+    ctx.fillRect(x+6, y+18, 6, 6);
+    ctx.fillRect(x+20, y+26, 6, 6);
+    ctx.fillRect(x+12, y+6, 4, 4);
+    if(getTile(c, r-1) !== GROUND && getTile(c,r-1) !== PIPE){
+      ctx.fillStyle = caveZone ? '#8C93A3' : C.grass;
+      ctx.fillRect(x, y, T, 11);
+      ctx.fillStyle = caveZone ? '#5D6472' : C.grassD;
+      ctx.fillRect(x, y+11, T, 5);
+    }
+  }else if(t === BRICK){
+    ctx.fillStyle = C.brick; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = C.brickD;
+    ctx.fillRect(x, y+14, T, 3);
+    ctx.fillRect(x+14, y, 3, 14);
+    ctx.fillRect(x+6, y+17, 3, 15);
+    ctx.fillRect(x+24, y+17, 3, 15);
+    ctx.fillRect(x, y+T-3, T, 3);
+  }else if(t === QUESTION){
+    var pulse = 0.5 + 0.5*Math.sin(Date.now()*0.004);
+    ctx.fillStyle = pulse > 0.5 ? C.gold : C.goldD;
+    ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = C.goldD;
+    ctx.fillRect(x,y,T,3); ctx.fillRect(x,y+T-3,T,3);
+    ctx.fillRect(x,y,3,T); ctx.fillRect(x+T-3,y,3,T);
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(x+11, y+8, 10, 4);
+    ctx.fillRect(x+18, y+12, 4, 6);
+    ctx.fillRect(x+14, y+18, 8, 4);
+    ctx.fillRect(x+14, y+24, 4, 4);
+    ctx.fillStyle = C.white;
+    ctx.fillRect(x+5, y+5, 3, 3);
+  }else if(t === USED){
+    ctx.fillStyle = '#8A6A3A'; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = '#6B4E28';
+    ctx.fillRect(x,y,T,3); ctx.fillRect(x,y+T-3,T,3);
+    ctx.fillRect(x,y,3,T); ctx.fillRect(x+T-3,y,3,T);
+  }else if(t === STONE){
+    ctx.fillStyle = C.stone; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = C.stoneD;
+    ctx.fillRect(x, y+T-4, T, 4);
+    ctx.fillRect(x+T-4, y, 4, T);
+    ctx.fillStyle = '#A6ADB9';
+    ctx.fillRect(x+3, y+3, 6, 4);
+    ctx.fillRect(x+16, y+14, 8, 4);
+  }else if(t === PIPE){
+    var isTop = getTile(c, r-1) !== PIPE;
+    var isLeft = getTile(c-1, r) !== PIPE;
+    var isRight = getTile(c+1, r) !== PIPE;
+    ctx.fillStyle = C.pipe; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle = C.pipeD;
+    if(isLeft) ctx.fillRect(x, y, 5, T);
+    if(isRight) ctx.fillRect(x+T-5, y, 5, T);
+    ctx.fillStyle = C.pipeHi;
+    ctx.fillRect(x + (isLeft?8:3), y, 6, T);
+    if(isTop){
+      ctx.fillStyle = C.pipeHi; ctx.fillRect(x, y, T, 14);
+      ctx.fillStyle = C.pipeD;
+      ctx.fillRect(x, y, T, 3); ctx.fillRect(x, y+11, T, 4);
+      if(isLeft) ctx.fillRect(x, y, 5, 15);
+      if(isRight) ctx.fillRect(x+T-5, y, 5, 15);
+    }
+  }else if(t === SPRING){
+    ctx.fillStyle = C.red; ctx.fillRect(x+2, y+8, T-4, T-8);
+    ctx.fillStyle = C.redD;
+    ctx.fillRect(x+2, y+T-6, T-4, 6);
+    ctx.fillStyle = C.white; ctx.fillRect(x+6, y+2, T-12, 8);
+    ctx.fillStyle = C.gold; ctx.fillRect(x+10, y+16, T-20, 12);
+  }else if(t === SPIKE){
+    ctx.fillStyle = C.stoneD;
+    for(var i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(x + i*11, y+T);
+      ctx.lineTo(x + i*11 + 6, y+8);
+      ctx.lineTo(x + i*11 + 11, y+T);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = '#B9C0CC';
+    for(var i2=0;i2<3;i2++) ctx.fillRect(x + i2*11 + 5, y+12, 2, 12);
+  }
+}
+
+function drawCoin(x, y){
+  ctx.fillStyle = C.goldD; ctx.fillRect(x-8, y-12, 16, 24);
+  ctx.fillStyle = C.gold; ctx.fillRect(x-5, y-9, 10, 18);
+  ctx.fillStyle = C.white; ctx.fillRect(x-2, y-5, 3, 10);
+}
+
+function drawGoomba(x, y, en){
+  var squash = en.dead ? 10 : 0;
+  ctx.fillStyle = C.brown;
+  ctx.fillRect(x+2, y+6+sqashFix(squash), 24, 20 - squash);
+  ctx.fillStyle = '#A05224';
+  ctx.fillRect(x, y+14+sqashFix(squash), 28, 12 - squash);
+  if(!en.dead){
+    ctx.fillStyle = C.white;
+    ctx.fillRect(x+6, y+10, 6, 7); ctx.fillRect(x+16, y+10, 6, 7);
+    ctx.fillStyle = C.ink;
+    var look = en.vx > 0 ? 3 : 0;
+    ctx.fillRect(x+6+look, y+12, 3, 5); ctx.fillRect(x+16+look, y+12, 3, 5);
+    var step = Math.sin(en.anim) > 0 ? 0 : 5;
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(x+2, y+26, 8, 4);
+    ctx.fillRect(x+18, y+26 - step, 8, 4);
+  }else{
+    ctx.fillStyle = C.ink; ctx.fillRect(x+4, y+20, 20, 3);
+  }
+}
+function sqashFix(v){ return v * 0.5; }
+
+function drawMushroom(x, y){
+  ctx.fillStyle = C.red; ctx.fillRect(x+2, y, 20, 12);
+  ctx.fillRect(x, y+6, 24, 8);
+  ctx.fillStyle = C.white;
+  ctx.fillRect(x+6, y+2, 5, 6); ctx.fillRect(x+15, y+4, 5, 6);
+  ctx.fillStyle = C.skin; ctx.fillRect(x+6, y+14, 12, 10);
+  ctx.fillStyle = C.ink; ctx.fillRect(x+8, y+17, 3, 4); ctx.fillRect(x+13, y+17, 3, 4);
+}
+
+function drawPlayer(x, y){
+  var p = player;
+  if(p.invuln > 0 && Math.floor(p.invuln * 12) % 2 === 0 && !p.dead) return;
+
+  var dir = p.face;
+  var run = Math.abs(p.vx) > 30 && p.onGround;
+  var frame = run ? (Math.floor(p.anim) % 2) : 0;
+  var h = p.h;
+  var bob = (run && frame === 1) ? 2 : 0;
+
+  // shadow
+  ctx.fillStyle = 'rgba(17,19,24,0.22)';
+  ctx.fillRect(x-2, y + h, 26, 5);
+
+  var top = y + bob;
+  // cap
+  ctx.fillStyle = C.red;
+  ctx.fillRect(x+2, top, 18, 7);
+  ctx.fillRect(dir > 0 ? x+8 : x-4, top+6, 18, 5);
+  // face
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(x+5, top+11, 15, 11);
+  // eye
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(dir > 0 ? x+15 : x+7, top+13, 3, 5);
+  // moustache
+  ctx.fillStyle = C.brown;
+  ctx.fillRect(dir > 0 ? x+12 : x+5, top+19, 9, 3);
+  // body / shirt
+  ctx.fillStyle = C.red;
+  ctx.fillRect(x+3, top+22, 18, 8);
+  // overalls
+  ctx.fillStyle = C.blue;
+  ctx.fillRect(x+4, top+28, 16, h-38);
+  ctx.fillRect(x+1, top+24, 5, 8);
+  ctx.fillRect(x+18, top+24, 5, 8);
+  // buttons
+  ctx.fillStyle = C.gold;
+  ctx.fillRect(x+8, top+29, 3, 3); ctx.fillRect(x+14, top+29, 3, 3);
+  // arms
+  ctx.fillStyle = C.red;
+  ctx.fillRect(dir > 0 ? x+20 : x-1, top+24, 5, 10);
+  // legs + shoes
+  var lift = (run && frame === 1) ? 5 : 0;
+  ctx.fillStyle = C.blue;
+  ctx.fillRect(x+4, top + h - 10, 7, 8);
+  ctx.fillRect(x+13, top + h - 10 - lift, 7, 8);
+  ctx.fillStyle = C.brown;
+  ctx.fillRect(x+1, top + h - 4, 11, 4);
+  ctx.fillRect(x+12, top + h - 4 - lift, 11, 4);
+
+  if(p.power){
+    ctx.fillStyle = 'rgba(247,201,72,0.35)';
+    ctx.fillRect(x-3, top-3, 28, h+6);
+  }
+}
+
+function drawFlag(x, camY){
+  var baseY = 9*T - camY;
+  var topY = baseY - 220;
+  ctx.fillStyle = '#B9C0CC'; ctx.fillRect(x+14, topY, 8, 220);
+  ctx.fillStyle = C.gold; ctx.fillRect(x+8, topY-10, 20, 12);
+  ctx.fillStyle = C.red;
+  var fy = topY + 30 + flagY;
+  ctx.fillRect(x - 30, fy, 46, 30);
+  ctx.fillStyle = C.white;
+  ctx.fillRect(x - 20, fy + 10, 12, 10);
+  ctx.fillStyle = C.stoneD; ctx.fillRect(x+2, baseY, 32, 10);
+}
+
+function drawCastle(x, camY){
+  var baseY = 9*T - camY;
+  var topY = baseY - 176;
+  ctx.fillStyle = C.brickD;
+  ctx.fillRect(x, topY, 176, 176);
+  ctx.fillStyle = C.brick;
+  ctx.fillRect(x+6, topY+6, 164, 170);
+  // battlements
+  for(var i=0;i<6;i++){
+    ctx.fillStyle = C.brick;
+    ctx.fillRect(x + i*30, topY-18, 22, 22);
+    ctx.fillStyle = C.brickD;
+    ctx.fillRect(x + i*30, topY-18, 22, 5);
+  }
+  // door
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(x + 66, baseY - 92, 46, 92);
+  ctx.fillRect(x + 58, baseY - 108, 62, 22);
+  // windows
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(x+22, topY+34, 24, 24);
+  ctx.fillRect(x+130, topY+34, 24, 24);
+  // flag on tower
+  ctx.fillStyle = '#B9C0CC'; ctx.fillRect(x+84, topY-72, 6, 56);
+  ctx.fillStyle = C.red; ctx.fillRect(x+90, topY-72, 32, 22);
+}
+
+/* =========================================================
+   11. HUD
+   ========================================================= */
+function pad(n, len){ var s = String(Math.max(0, Math.floor(n))); while(s.length < len) s = '0' + s; return s; }
+function updateHUD(){
+  document.getElementById('hudScore').textContent = pad(score, 6);
+  document.getElementById('hudCoins').textContent = '×' + pad(coinCount, 2);
+  document.getElementById('hudTime').textContent = pad(timeLeft, 3);
+}
+
+/* =========================================================
+   12. LOOP
+   ========================================================= */
+var lastT = 0, acc = 0;
+function frame(now){
+  var dt = (now - lastT) / 1000;
+  if(!isFinite(dt) || dt < 0) dt = 0;
+  if(dt > 0.1) dt = 0.1;
+  lastT = now;
+  acc += dt;
+  var guard = 0;
+  while(acc >= STEP && guard < 6){ step(STEP); acc -= STEP; guard++; }
+  if(guard >= 6) acc = 0;
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* =========================================================
+   13. PAGE: reveals + camera signature
+   ========================================================= */
+var rvNodes = document.querySelectorAll('.rv');
+if('IntersectionObserver' in window && !reduced){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, {threshold:0.12});
+  for(var ri=0; ri<rvNodes.length; ri++) io.observe(rvNodes[ri]);
+}else{
+  for(var rj=0; rj<rvNodes.length; rj++) rvNodes[rj].classList.add('in');
+}
+
+var revealSection = document.getElementById('reveal');
+var rvCamFrame = document.getElementById('rvCamFrame');
+var rvCoinGlow = document.getElementById('rvCoinGlow');
+var rvDoor = document.getElementById('rvDoor');
+var rcTitle = document.getElementById('rcTitle');
+var rcText = document.getElementById('rcText');
+var stageTags = document.querySelectorAll('.stage-tag');
+var rvLabels = document.querySelectorAll('#rvLabels span');
+
+var STAGE_TEXT = [
+  ['LOOK AROUND', 'The world starts wide. Every platform, pipe and hill is placed by hand — 240 tiles of meadow, cave and castle approach.'],
+  ['FIND THE COIN', 'The camera pushes in and the gold lights up. Coins sit where a jump feels natural, not where it is easy.'],
+  ['DASH TO THE CASTLE', 'The frame tilts upward and the route is clear. Reach the flagpole and the run is scored — coins, stomp and time.']
+];
+
+function updateReveal(){
+  if(!revealSection) return;
+  var rect = revealSection.getBoundingClientRect();
+  var span = rect.height + window.innerHeight * 0.5;
+  var p = (window.innerHeight * 0.8 - rect.top) / span;
+  if(p < 0) p = 0; if(p > 1) p = 1;
+
+  var stage = p < 0.34 ? 0 : (p < 0.68 ? 1 : 2);
+
+  if(reduced){
+    stage = 0;
+    rvCamFrame.setAttribute('transform','translate(0,0)');
+    rvCoinGlow.setAttribute('opacity','1');
+    for(var i=0;i<stageTags.length;i++){ stageTags[i].classList.add('on'); }
+    for(var j=0;j<rvLabels.length;j++){ rvLabels[j].classList.add('on'); }
+  }else{
+    var pan = -p * 210;
+    var lift = -p * 34;
+    rvCamFrame.setAttribute('transform','translate('+pan.toFixed(1)+','+lift.toFixed(1)+')');
+    rvCoinGlow.setAttribute('opacity', stage >= 1 ? '1' : '0');
+    rvDoor.setAttribute('fill', stage >= 2 ? '#F24A2E' : '#111318');
+    for(var k=0;k<stageTags.length;k++){
+      if(k === stage) stageTags[k].classList.add('on'); else stageTags[k].classList.remove('on');
+    }
+    for(var l=0;l<rvLabels.length;l++){
+      if(l <= stage) rvLabels[l].classList.add('on'); else rvLabels[l].classList.remove('on');
+    }
+  }
+
+  rcTitle.textContent = STAGE_TEXT[stage][0];
+  rcText.textContent = STAGE_TEXT[stage][1];
+}
+
+var ticking = false;
+window.addEventListener('scroll', function(){
+  if(ticking) return;
+  ticking = true;
+  requestAnimationFrame(function(){ updateReveal(); ticking = false; });
+}, {passive:true});
+window.addEventListener('resize', updateReveal);
+
+/* =========================================================
+   14. BOOT
+   ========================================================= */
+resetWorld();
+mode = 'title';
+updateHUD();
+document.getElementById('bestScore').textContent = 'BEST ' + pad(best, 6);
+document.getElementById('footScore').textContent = 'Best ' + pad(best, 6);
+updateReveal();
+requestAnimationFrame(frame);
+
+// keep the canvas crisp when the tab is restored
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) lastT = performance.now();
+});
+
+})();
+</script>
+</body>
+</html>
